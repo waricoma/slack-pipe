@@ -22,12 +22,12 @@ const pipe = io => {
   const ioChannel = io === 'from' ? process.env.FromChannel : process.env.ToChannel;
   const oiChannel = oi === 'from' ? process.env.FromChannel : process.env.ToChannel;
   api.rtm[io].on('message', message => {
-    if ('files' in message) {
-      for (const file of message.files) api.web.legacy[io].files.delete({file: file.id});
-      return true;
-    }
     if (!message.subtype && message.user === api.rtm[io].activeUserId) return true;
     if (!message.subtype && io === 'to' && message.channel[0] === 'D') {
+      if ('files' in message) {
+        for (const file of message.files) api.web.legacy[io].files.delete({file: file.id});
+        return true;
+      }
       api.web[io].chat.postMessage({
         channel: message.channel,
         text: '→ #random',
@@ -36,6 +36,10 @@ const pipe = io => {
       return true;
     }
     if (message.subtype || message.channel !== ioChannel) return true;
+    if ('files' in message) {
+      for (const file of message.files) api.web.legacy[io].files.delete({file: file.id});
+      return true;
+    }
     api.web.legacy[io].users.profile.get({ user: message.user }).then(res => {
       if (io === 'to') {
         api.web[oi].chat.postMessage({
